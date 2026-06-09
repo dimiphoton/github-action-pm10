@@ -1,0 +1,79 @@
+# ==============================================================================
+# WORKFLOW GITHUB ACTIONS : scraping horaire des mesures PM10 de Wallon'Air
+# ==============================================================================
+# Ce fichier décrit un "workflow" : une suite d'étapes que GitHub exécute
+# automatiquement sur une machine virtuelle (un "runner") hébergée par GitHub.
+# ==============================================================================
+
+# Le nom du workflow, tel qu'il apparaîtra dans l'onglet "Actions" de GitHub.
+name: Scraping PM10 Wallonie
+
+# ------------------------------------------------------------------------------
+# BLOC "on" : QUAND le workflow doit-il se déclencher ?
+# ------------------------------------------------------------------------------
+on:
+  # Déclenchement planifié (cron). Syntaxe : "minute heure jour mois jour_semaine"
+  # "5 * * * *" = à la minute 5 de CHAQUE heure (ex: 10h05, 11h05...).
+  # On évite la minute 0 car GitHub est surchargé pile à l'heure ronde,
+  # ce qui peut retarder (voire sauter) l'exécution.
+  # NB : les crons GitHub sont en heure UTC et ne sont pas précis à la minute près.
+  schedule:
+    - cron: "5 * * * *"
+
+  # Déclenchement manuel : ajoute un bouton "Run workflow" dans l'onglet Actions.
+  # Très pratique pour tester sans attendre le prochain passage du cron !
+  workflow_dispatch:
+
+# ------------------------------------------------------------------------------
+# BLOC "permissions" : QUE peut faire le bot GitHub ?
+# ------------------------------------------------------------------------------
+# Par défaut, le jeton automatique (GITHUB_TOKEN) est en lecture seule.
+# "contents: write" l'autorise à pousser des commits sur le dépôt,
+# ce qui est indispensable pour sauvegarder nos fichiers JSON et la base SQLite.
+permissions:
+  contents: write
+
+# ------------------------------------------------------------------------------
+# BLOC "jobs" : QUE faire ? (la liste des tâches)
+# ------------------------------------------------------------------------------
+jobs:
+  scrape:
+    # Le type de machine virtuelle : Ubuntu dernière version (le plus courant).
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : récupérer le contenu du dépôt sur le runner.
+      # Sans cette étape, la machine virtuelle est vide : pas de script,
+      # pas de dossier data/, rien à committer !
+      - name: Récupérer le dépôt (checkout)
+        uses: actions/checkout@v4
+
+      # Étape 2 : installer Python sur le runner.
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Étape 3 : installer les dépendances listées dans requirements.txt.
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      # Étape 4 : exécuter notre script de scraping.
+      # S'il lève une exception (site inaccessible...), le job s'arrête ici
+      # en erreur et AUCUN commit n'est fait : les données restent intactes.
+      - name: Lancer le scraping
+        run: python fetch_pm10.py
+
+      # Étape 5 : committer et pousser les données mises à jour.
+      # On configure d'abord l'identité git du bot (obligatoire pour committer).
+      # "git add" cible à la fois les fichiers JSON quotidiens ET la base SQLite.
+      # L'astuce "git diff --staged --quiet ||" signifie : "s'il y a des
+      # changements en zone de staging, alors committer" — sans elle, un
+      # commit vide ferait échouer le job quand rien n'a changé.
+      - name: Commit et push des données
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*.json data/wallonair.db
+          git diff --staged --quiet || git commit -m "data: mesures PM10 $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git push
