@@ -34,6 +34,17 @@ permissions:
   contents: write
 
 # ------------------------------------------------------------------------------
+# BLOC "concurrency" : éviter deux runs qui poussent en même temps
+# ------------------------------------------------------------------------------
+# Si un run est encore en cours quand le cron suivant se déclenche, GitHub
+# attend la fin du premier au lieu de lancer deux jobs en parallèle.
+# Sans ça, les deux peuvent committer sur la même branche et le 2e push échoue
+# avec "fetch first" (remote contains work that you do not have locally).
+concurrency:
+  group: scrape-pm10-${{ github.ref }}
+  cancel-in-progress: false
+
+# ------------------------------------------------------------------------------
 # BLOC "jobs" : QUE faire ? (la liste des tâches)
 # ------------------------------------------------------------------------------
 jobs:
@@ -47,6 +58,9 @@ jobs:
       # pas de dossier data/, rien à committer !
       - name: Récupérer le dépôt (checkout)
         uses: actions/checkout@v4
+        with:
+          # Historique complet : nécessaire pour "git pull --rebase" avant le push.
+          fetch-depth: 0
 
       # Étape 2 : installer Python sur le runner.
       - name: Installer Python
@@ -70,10 +84,13 @@ jobs:
       # L'astuce "git diff --staged --quiet ||" signifie : "s'il y a des
       # changements en zone de staging, alors committer" — sans elle, un
       # commit vide ferait échouer le job quand rien n'a changé.
+      # "git pull --rebase" récupère les commits du bot (run précédent) avant
+      # de pousser : évite l'erreur "rejected (fetch first)" en cas de chevauchement.
       - name: Commit et push des données
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/*.json data/wallonair.db
           git diff --staged --quiet || git commit -m "data: mesures PM10 $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase origin main
           git push

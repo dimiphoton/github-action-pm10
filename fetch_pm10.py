@@ -29,6 +29,7 @@ SQLite (base de données) :
 import json
 import re
 import sqlite3
+import sys
 from pathlib import Path
 
 import requests
@@ -64,10 +65,11 @@ def recuperer_page() -> str:
     return reponse.text
 
 
-def extraire_mesures(html: str) -> tuple[str, list[dict]]:
+def extraire_mesures(html: str) -> tuple[str, list[dict]] | None:
     """Extrait l'horodatage officiel et les mesures PM10 du HTML.
 
-    Retourne un tuple : (timestamp, liste de mesures).
+    Retourne (timestamp, mesures) ou None si le site répond mais n'a pas
+    encore publié de valeurs PM10 (maintenance nocturne, page vide...).
     Chaque mesure est un dict : {"station_name": ..., "pm10_value": ...}.
     """
     soup = BeautifulSoup(html, "html.parser")
@@ -121,7 +123,14 @@ def extraire_mesures(html: str) -> tuple[str, list[dict]]:
         mesures.append({"station_name": station, "pm10_value": valeur_pm10})
 
     if not mesures:
-        raise ValueError("Aucune mesure PM10 extraite : la structure de la page a changé ?")
+        # Pas une erreur fatale : Wallon'Air vide parfois son tableau vers 01h UTC
+        # (maintenance). On signale et on laisse main() sortir proprement (code 0)
+        # pour ne pas déclencher d'email d'échec GitHub Actions.
+        print(
+            f"Aucune mesure PM10 disponible pour l'observation du {timestamp} "
+            "(page vide ou maintenance ?). Rien à enregistrer."
+        )
+        return None
 
     print(f"{len(mesures)} mesures PM10 extraites (observation du {timestamp}).")
     return timestamp, mesures
@@ -229,8 +238,12 @@ def main() -> None:
     # script AVANT les sauvegardes : les fichiers existants restent intacts,
     # et GitHub Actions marquera le job en erreur (visible dans l'onglet Actions).
     html = recuperer_page()
-    timestamp, mesures = extraire_mesures(html)
+    resultat = extraire_mesures(html)
+    if resultat is None:
+        # Sortie propre : le job GitHub Actions reste vert (pas d'email d'échec).
+        sys.exit(0)
 
+    timestamp, mesures = resultat
     sauvegarder_json(timestamp, mesures)
     sauvegarder_sqlite(timestamp, mesures)
 
