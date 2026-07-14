@@ -792,5 +792,119 @@
             "station_name": "Dourbes",
             "pm10_value": 27.0
         }
+    ],
+    "2026-07-14 18:00": [
+        {
+            "station_name": "Rixensart",
+            "pm10_value": 20.0
+        },
+        {
+            "station_name": "Charleroi-Parc",
+            "pm10_value": 22.0
+        },
+        {
+            "station_name": "Aeroport Charleroi1",
+            "pm10_value": 13.0
+        },
+        {
+            "station_name": "Aeroport Charleroi2",
+            "pm10_value": 15.0
+        },
+        {
+            "station_name": "Marchienne-au-Pont",
+            "pm10_value": 24.0
+        },
+        {
+            "station_name": "Marcinelle",
+            "pm10_value": 25.0
+        },
+        {
+            "station_name": "Charleroi",
+            "pm10_value": 19.0
+        },
+        {
+            "station_name": "Chatelineau",
+            "pm10_value": 18.0
+        },
+        {
+            "station_name": "Havinnes",
+            "pm10_value": 15.0
+        },
+        {
+            "station_name": "Mons",
+            "pm10_value": 23.0
+        },
+        {
+            "station_name": "Angleur",
+            "pm10_value": 19.0
+        },
+        {
+            "station_name": "Membach",
+            "pm10_value": 21.0
+        },
+        {
+            "station_name": "Engis",
+            "pm10_value": 16.0
+        },
+        {
+            "station_name": "Aeroport Liege2",
+            "pm10_value": 13.0
+        },
+        {
+            "station_name": "Aeroport Liege1",
+            "pm10_value": 10.0
+        },
+        {
+            "station_name": "Herstal",
+            "pm10_value": 15.0
+        },
+        {
+            "station_name": "Val Benoit",
+            "pm10_value": 17.0
+        },
+        {
+            "station_name": "Destenay",
+            "pm10_value": 17.0
+        },
+        {
+            "station_name": "Saint-Nicolas",
+            "pm10_value": 20.0
+        },
+        {
+            "station_name": "Jemeppe",
+            "pm10_value": 27.0
+        },
+        {
+            "station_name": "Offagne",
+            "pm10_value": 37.0
+        },
+        {
+            "station_name": "Habay",
+            "pm10_value": 17.0
+        },
+        {
+            "station_name": "Sainte-Ode",
+            "pm10_value": 28.0
+        },
+        {
+            "station_name": "Vielsalm",
+            "pm10_value": 20.0
+        },
+        {
+            "station_name": "Vezin",
+            "pm10_value": 20.0
+        },
+        {
+            "station_name": "Namur",
+            "pm10_value": 23.0
+        },
+        {
+            "station_name": "Sinsin",
+            "pm10_value": 29.0
+        },
+        {
+            "station_name": "Dourbes",
+            "pm10_value": 26.0
+        }
     ]
 }
